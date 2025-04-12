@@ -49,7 +49,6 @@ uvicorn main:app --reload
 FastAPI는 자동으로 API 문서를 생성합니다:
 
 - Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
 
 ## API 엔드포인트
 
@@ -77,11 +76,6 @@ GET /timetable?url={에브리타임_URL}
   "message": "시간표 파싱 성공"
 }
 ```
-
-## 주의사항
-
-- 에브리타임 웹사이트 구조가 변경되면 파싱 로직이 작동하지 않을 수 있습니다.
-- ChromeDriver는 사용하는 Chrome 브라우저 버전과 일치해야 합니다.
 
 ## 부하 테스트
 
