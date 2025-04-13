@@ -7,6 +7,8 @@
 from bs4 import BeautifulSoup, Tag
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 import time
 from typing import Dict, List, Tuple, Optional
 import json
@@ -17,6 +19,8 @@ import atexit
 import threading
 import queue
 from concurrent.futures import ThreadPoolExecutor
+import os
+from utils.everytime_base import EverytimeTimetableParserBase
 
 # 드라이버 풀 클래스 구현
 class WebDriverPool:
@@ -39,30 +43,20 @@ class WebDriverPool:
             if self._shutdown:
                 raise RuntimeError("드라이버 풀이 이미 종료되었습니다.")
             
-            try:
-                # 사용 가능한 드라이버가 있는지 확인
-                driver = self.available_drivers.get_nowait()
-                
-                # 드라이버 상태 확인
-                try:
-                    driver.title  # 간단한 명령으로 드라이버 상태 확인
-                    return driver
-                except Exception:
-                    # 문제가 있는 드라이버는 종료하고 새로 생성
-                    self._close_driver(driver)
-                    # 이 경우 아래 코드로 이동하여 새 드라이버 생성
-            except queue.Empty:
-                # 사용 가능한 드라이버가 없음
-                pass
-            
-            # 새 드라이버 생성 가능 여부 확인
+            # 매번 새 드라이버를 생성하는 방식으로 변경
+            # 이전에 사용한 드라이버를 재사용할 때 발생하는 문제를 방지합니다
             if self.active_drivers < self.max_drivers:
-                driver = self._create_driver()
-                self.active_drivers += 1
-                return driver
-            
-            # 최대 드라이버 수에 도달한 경우 대기
-            raise HTTPException(status_code=503, detail="사용 가능한 드라이버가 없습니다. 잠시 후 다시 시도해주세요.")
+                try:
+                    driver = self._create_driver()
+                    self.active_drivers += 1
+                    return driver
+                except Exception as e:
+                    print(f"드라이버 생성 실패: {str(e)}")
+                    raise HTTPException(status_code=503, detail=f"브라우저 드라이버 생성 오류: {str(e)}")
+            else:
+                # 최대 드라이버 수에 도달한 경우
+                # 큐에 있는 드라이버를 재사용하는 대신 기다리게 함
+                raise HTTPException(status_code=503, detail="서버 부하가 높습니다. 잠시 후 다시 시도해주세요.")
     
     def release_driver(self, driver):
         """사용 완료된 드라이버를 풀에 반환"""
@@ -71,27 +65,35 @@ class WebDriverPool:
             return
             
         with self.lock:
-            try:
-                # 드라이버 상태 확인
-                driver.title
-                # 정상 드라이버는 풀에 반환
-                self.available_drivers.put(driver)
-            except Exception:
-                # 문제가 있는 드라이버는 종료하고 카운트 감소
-                self._close_driver(driver)
-                self.active_drivers -= 1
+            # 드라이버를 재사용하지 않고 항상 종료하도록 변경
+            self._close_driver(driver)
+            self.active_drivers -= 1
     
     def _create_driver(self):
         """새 웹드라이버 인스턴스 생성"""
-        driver = webdriver.Chrome(options=self.driver_options)
-        driver.set_page_load_timeout(self.timeout)
-        return driver
+        try:
+            print("일반 환경에서 실행 중입니다.")
+            service = Service(ChromeDriverManager().install())
+            
+            # 안정성을 위해 타임아웃 설정
+            driver = webdriver.Chrome(service=service, options=self.driver_options)
+            driver.set_page_load_timeout(self.timeout)
+            
+            # 윈도우 크기 설정 - 일부 요소가 보이지 않는 문제 해결
+            driver.set_window_size(1920, 1080)
+            
+            return driver
+        except Exception as e:
+            print(f"드라이버 생성 중 오류 발생: {str(e)}")
+            raise
     
     def _close_driver(self, driver):
         """드라이버 안전하게 종료"""
         try:
-            driver.quit()
-        except:
+            if driver:
+                driver.quit()
+        except Exception as e:
+            print(f"드라이버 종료 중 오류 발생: {str(e)}")
             pass
     
     def shutdown(self):
@@ -100,8 +102,11 @@ class WebDriverPool:
         
         # 모든 대기 중인 드라이버 종료
         while not self.available_drivers.empty():
-            driver = self.available_drivers.get()
-            self._close_driver(driver)
+            try:
+                driver = self.available_drivers.get_nowait()
+                self._close_driver(driver)
+            except:
+                pass
         
         self.active_drivers = 0
 
@@ -109,29 +114,51 @@ class WebDriverPool:
 DRIVER_POOL = None
 THREAD_POOL = ThreadPoolExecutor(max_workers=10)
 
-class TimetableParser:
+class ChromiumTimetableParser(EverytimeTimetableParserBase):
     # 멀티스레딩 환경에서 스레드별 상태 저장
     _thread_local = threading.local()
     
     def __init__(self, url: str = None, headless: bool = True, timeout: int = 10):
-        self.url = url
-        self.day_enum = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-        self.timeout = timeout
+        super().__init__(url, timeout)
         self.headless = headless
         
         # Selenium 옵션 설정
         self.options = Options()
         if headless:
-            self.options.add_argument('--headless')
+            self.options.add_argument('--headless')  # 더 안정적인 헤드리스 모드 사용
+        
+        # 도커/리눅스 환경에 필요한 추가 옵션
         self.options.add_argument('--no-sandbox')
         self.options.add_argument('--disable-dev-shm-usage')
-        self.options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3')
-        self.options.add_experimental_option('excludeSwitches', ['enable-logging'])
+        self.options.add_argument('--disable-gpu')
+        self.options.add_argument('--window-size=1920,1080')
+        self.options.add_argument('--disable-extensions')
+        
+        # 시크릿 모드(incognito) 사용 - 사용자 데이터 디렉토리 문제 해결
+        self.options.add_argument('--incognito')
+        
+        # 메모리 및 성능 관련 최적화 옵션
+        self.options.add_argument('--disable-infobars')
+        self.options.add_argument('--disable-notifications')
+        self.options.add_argument('--disable-popup-blocking')
+        self.options.add_argument('--disable-save-password-bubble')
+        
+        # 브라우저 충돌 방지 옵션
+        self.options.add_argument('--disable-features=TranslateUI')
+        self.options.add_argument('--disable-translate')
+        self.options.add_argument('--disable-sync')
+        
+        # 원격 디버깅 비활성화 (충돌 방지)
+        self.options.add_experimental_option('excludeSwitches', ['enable-automation', 'enable-logging'])
+        self.options.add_experimental_option('useAutomationExtension', False)
+        
+        # 에이전트 설정
+        self.options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.3')
         
         # 전역 드라이버 풀 초기화
         global DRIVER_POOL
         if DRIVER_POOL is None:
-            DRIVER_POOL = WebDriverPool(max_drivers=10, driver_options=self.options, timeout=self.timeout)
+            DRIVER_POOL = WebDriverPool(max_drivers=5, driver_options=self.options, timeout=self.timeout)
     
     @classmethod
     def parse_timetable_async(cls, url: str, headless: bool = True, timeout: int = 10):
@@ -270,47 +297,6 @@ class TimetableParser:
                 # 예외 발생 여부와 관계없이 드라이버 반환 보장
                 if driver:
                     DRIVER_POOL.release_driver(driver)
-    
-    def _validate_url(self, url: str) -> None:
-        """URL이 유효한지 확인"""
-        if not url.startswith(('http://', 'https://')):
-            raise ValueError("유효하지 않은 URL 형식입니다.")
-            
-        # 에브리타임 URL인지 확인
-        if not 'everytime.kr' in url:
-            raise ValueError("에브리타임 URL이 아닙니다.")
-    
-    def _extract_time_of_subject(self, subject: Tag) -> Tuple[int, int, int, int]:
-        """과목의 시작 및 종료 시간을 추출"""
-        try:
-            style = subject['style']
-            height = int(style.split(';')[0].split(':')[1].replace('px', ''))
-            top = int(style.split(';')[1].split(':')[1].replace('px', ''))
-            # 0px부터 오전 0시부터 시작
-            # 50px당 1시간
-            start_hour = top // 50
-            start_minute = (top % 50) * 60 // 50
-            end_hour = (top + height - 1) // 50
-            end_minute = ((top + height - 1) % 50) * 60 // 50
-            
-            return (start_hour, start_minute, end_hour, end_minute)
-        except (KeyError, IndexError, ValueError) as e:
-            raise ValueError(f"시간 정보 추출 실패: {str(e)}")
-    
-    def _extract_name_of_subject(self, subject: Tag) -> str:
-        """과목명 추출"""
-        name_element = subject.select_one('h3')
-        return name_element.text.strip() if name_element else "알 수 없음"
-    
-    def _extract_place_of_subject(self, subject: Tag) -> str:
-        """강의실 위치 추출"""
-        place_element = subject.select_one('p span')
-        return place_element.text.strip() if place_element else "장소 미정"
-    
-    def _extract_professor_of_subject(self, subject: Tag) -> str:
-        """교수명 추출"""
-        professor_element = subject.select_one('em')
-        return professor_element.text.strip() if professor_element else "담당자 미정"
 
 def cleanup_resources():
     """모듈 종료 시 모든 리소스 정리"""
@@ -328,7 +314,7 @@ atexit.register(cleanup_resources)
 # 모듈로 실행될 때의 테스트 코드
 if __name__ == "__main__":
     url = input("에브리타임 시간표 URL을 입력하세요: ")
-    parser = TimetableParser(url)
+    parser = ChromiumTimetableParser(url)
     result = parser.parse_timetable()
     
     # 결과 출력

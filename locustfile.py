@@ -6,7 +6,7 @@ import logging
 # 테스트에 사용할 에브리타임 URL 샘플들
 # 이 URL을 실제 테스트할 에브리타임 URL로 변경하세요
 EVERYTIME_SAMPLE_URLS = [
-    
+    'https://everytime.kr/@Gpm4hmWAGNlbWwIKAaGa'
 ]
 
 class TimeTableApiUser(HttpUser):

@@ -7,7 +7,9 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, HttpUrl
 from typing import List
 import asyncio
-from utils.everytime import TimetableParser  # 수정된 import 경로
+import platform
+from utils.chromium_everytime import ChromiumTimetableParser
+from utils.sync_playwright_everytime import SyncPlaywrightTimetableParser
 
 # 라우터 정의
 router = APIRouter(
@@ -44,7 +46,13 @@ async def get_timetable(url: HttpUrl = Query(..., description="에브리타임 �
         # 세마포어를 활용하여 동시 처리 작업 수 제한
         async with processing_semaphore:
             # 비동기 컨텍스트에서 스레드풀의 Future를 사용하여 처리
-            future = TimetableParser.parse_timetable_async(str(url), headless=True)
+            
+            if platform.system() == 'Windows':
+                future = ChromiumTimetableParser.parse_timetable_async(str(url))
+            else:
+                # 호스팅 환경에서 스레드 환경에서 크로미움이 작동하지 않는 관계로
+                # Playwright를 사용
+                future = SyncPlaywrightTimetableParser.parse_timetable_async(str(url))
             
             # 이벤트 루프에서 Future 결과를 기다림
             loop = asyncio.get_event_loop()

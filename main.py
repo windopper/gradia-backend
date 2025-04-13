@@ -2,6 +2,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import psutil
 from datetime import datetime
+import asyncio
+import platform
+
+# Windows 환경에서는 이벤트 루프 정책 변경
+# if platform.system() == 'Windows':
+#     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+#     print("Windows 환경 감지: SelectorEventLoop 정책으로 변경됨")
 
 # 라우터 모듈 임포트
 from route import timetable
@@ -46,4 +53,4 @@ async def get_memory_info():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000)

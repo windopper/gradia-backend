@@ -4,15 +4,18 @@ Gradia 백엔드
 
 ## 기능
 
-- 에브리타임 URL에서 시간표 정보 파싱
+- 에브리타임 URL에서 시간표 정보 파싱 (Selenium 및 Playwright 지원)
 - RESTful API로 시간표 데이터 제공
+- Docker 지원으로 간편한 배포 환경 구성
 
 ## 기술 스택
 
 - Python 3.12+
 - FastAPI
 - Selenium
+- Playwright
 - BeautifulSoup4
+- Docker
 
 ## 설치 방법
 
@@ -20,7 +23,7 @@ Gradia 백엔드
 
 - Python 3.12 이상
 - Chrome 웹 브라우저
-- ChromeDriver (Chrome 버전과 일치하는 버전 필요)
+- ChromeDriver (Chrome 버전과 일치하는 버전 필요) 또는 Playwright
 
 ### 패키지 설치
 
@@ -29,7 +32,16 @@ Gradia 백엔드
 uv sync
 ```
 
+### Playwright 설치 (선택사항)
+
+```bash
+# Playwright 브라우저 설치
+python -m playwright install
+```
+
 ## 실행 방법
+
+### 로컬 실행
 
 ```bash
 # 개발 서버 실행
@@ -43,6 +55,16 @@ uvicorn main:app --reload
 ```
 
 서버는 기본적으로 `http://localhost:8000`에서 실행됩니다.
+
+### Docker 실행
+
+```bash
+# Docker 이미지 빌드
+docker build -t gradia-backend .
+
+# Docker 컨테이너 실행
+docker run -p 8000:8000 gradia-backend
+```
 
 ## API 문서
 
@@ -78,10 +100,23 @@ GET /timetable?url={에브리타임_URL}
 }
 ```
 
+## 파서 선택 (내부 구현)
+
+프로젝트는 두 가지 웹 파싱 방식을 지원합니다:
+
+1. Selenium/ChromeDriver 기반 파서 (기존)
+2. Playwright 기반 파서 (신규 추가)
+
+각 파서는 다음과 같은 특징이 있습니다:
+
+- **Selenium 파서**: 안정적이지만 ChromeDriver 설치 필요
+- **Playwright 파서**: 브라우저 자동 설치 및 관리 지원, 더 빠른 성능
+
 ## 주의사항
 
 - 에브리타임 웹사이트 구조가 변경되면 파싱 로직이 작동하지 않을 수 있습니다.
 - ChromeDriver는 사용하는 Chrome 브라우저 버전과 일치해야 합니다.
+- Docker 환경에서는 Playwright를 사용하여 브라우저 의존성 문제를 해결합니다.
 
 ## 부하 테스트
 
