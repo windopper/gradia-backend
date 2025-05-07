@@ -4,4 +4,4 @@ Gradia Backend 라우트 모듈
 """
 
 # 각 라우트 모듈을 import할 때 route.__all__로 사용할 수 있도록 설정
-__all__ = ["timetable"]
+__all__ = ["timetable", "study_session", "subject"]

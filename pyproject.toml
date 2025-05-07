@@ -19,6 +19,9 @@ dependencies = [
     "datetime>=5.5",
     "webdriver-manager>=4.0.2",
     "playwright>=1.51.0",
+    "google-auth>=2.40.1",
+    "python-jose[cryptography]>=3.4.0",
+    "firebase-admin>=6.8.0",
 ]
 
 [project.optional-dependencies]

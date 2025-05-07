@@ -50,7 +50,7 @@ async def get_timetable(url: HttpUrl = Query(..., description="에브리타임 �
             if platform.system() == 'Windows':
                 future = ChromiumTimetableParser.parse_timetable_async(str(url))
             else:
-                # 호스팅 환경에서 스레드 환경에서 크로미움이 작동하지 않는 관계로
+                # 호스팅 환경에서 크로미움이 작동하지 않는 관계로
                 # Playwright를 사용
                 future = SyncPlaywrightTimetableParser.parse_timetable_async(str(url))
             

@@ -11,7 +11,8 @@ import platform
 #     print("Windows 환경 감지: SelectorEventLoop 정책으로 변경됨")
 
 # 라우터 모듈 임포트
-from route import timetable
+from route import timetable, study_session, subject
+from route.auth import google
 
 app = FastAPI(title="Gradia Backend", description="Gradia Backend API")
 
@@ -26,6 +27,9 @@ app.add_middleware(
 
 # 라우터 등록
 app.include_router(timetable.router)
+app.include_router(google.router)
+app.include_router(study_session.router)
+app.include_router(subject.router)
 
 @app.get("/")
 async def root():
