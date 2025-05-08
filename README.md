@@ -291,7 +291,7 @@ DELETE /subjects/{subject_id}
 
 ### 테스트 기능
 
-- `/timetable` 엔드포인트에 대한 부하 테스트 (현재 `locustfile.py`에서 해당 User는 주석 처리되어 있을 수 있습니다.)
+- `/timetable` 엔드포인트에 대한 부하 테스트
 - 과목(Subject) 및 학습 세션(Study Session) API에 대한 CRUD 부하 테스트:
     - 테스트 시작 시 임시 사용자 계정을 동적으로 생성하고, 해당 사용자의 인증 토큰을 사용하여 API를 호출합니다.
     - **과목(Subject) API 테스트 대상**:

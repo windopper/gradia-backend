@@ -12,7 +12,7 @@ from datetime import datetime
 from dependencies import get_db  # get_db 의존성 함수 import
 from firebase_admin import firestore_async  # db_client 타입 힌트용 (선택적)
 
-from route.auth.google import get_current_user_from_backend_token
+from route.auth.common import get_current_user_from_token
 # DB 함수들은 이미 db_client를 받도록 수정되었음
 from db.subject import (
     get_subjects_by_user_id,
@@ -93,7 +93,7 @@ class SubjectListResponse(BaseModel):
 
 @router.get("/", response_model=SubjectListResponse)
 async def get_all_subjects_route(
-    current_user: dict = Depends(get_current_user_from_backend_token),
+    current_user: dict = Depends(get_current_user_from_token),
     db_client: firestore_async.AsyncClient = Depends(get_db)
 ):
     """
@@ -119,7 +119,7 @@ async def get_all_subjects_route(
 @router.get("/{subject_id}", response_model=SubjectResponse)
 async def get_subject_route(
     subject_id: str,
-    current_user: dict = Depends(get_current_user_from_backend_token),
+    current_user: dict = Depends(get_current_user_from_token),
     db_client: firestore_async.AsyncClient = Depends(get_db)
 ):
     """
@@ -157,7 +157,7 @@ async def get_subject_route(
 @router.post("/", response_model=SubjectResponse, status_code=status.HTTP_201_CREATED)
 async def create_new_subject_route(
     subject_data: SubjectCreate,
-    current_user: dict = Depends(get_current_user_from_backend_token),
+    current_user: dict = Depends(get_current_user_from_token),
     db_client: firestore_async.AsyncClient = Depends(get_db)
 ):
     """
@@ -204,7 +204,7 @@ async def create_new_subject_route(
 async def update_existing_subject_route(
     subject_id: str,
     update_data: SubjectUpdate,
-    current_user: dict = Depends(get_current_user_from_backend_token),
+    current_user: dict = Depends(get_current_user_from_token),
     db_client: firestore_async.AsyncClient = Depends(get_db)
 ):
     """
@@ -261,7 +261,7 @@ async def update_existing_subject_route(
 @router.delete("/{subject_id}")
 async def delete_existing_subject_route(
     subject_id: str,
-    current_user: dict = Depends(get_current_user_from_backend_token),
+    current_user: dict = Depends(get_current_user_from_token),
     db_client: firestore_async.AsyncClient = Depends(get_db)
 ):
     """

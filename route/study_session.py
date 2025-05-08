@@ -11,7 +11,7 @@ from datetime import datetime, date
 from dependencies import get_db
 from firebase_admin import firestore_async
 
-from route.auth.google import get_current_user_from_backend_token
+from route.auth.common import get_current_user_from_token
 
 from db.study_session import (
     get_study_sessions_by_user_id,
@@ -70,7 +70,7 @@ class StudySessionListResponse(BaseModel):
 
 @router.get("/", response_model=StudySessionListResponse)
 async def get_all_study_sessions_route(
-    current_user: dict = Depends(get_current_user_from_backend_token),
+    current_user: dict = Depends(get_current_user_from_token),
     subject_id: Optional[str] = Query(
         None, description="특정 과목 ID에 대한 학습 세션만 조회"),
     db_client: firestore_async.AsyncClient = Depends(get_db)
@@ -105,7 +105,7 @@ async def get_all_study_sessions_route(
 @router.get("/{session_id}", response_model=StudySessionResponse)
 async def get_study_session_route(
     session_id: str,
-    current_user: dict = Depends(get_current_user_from_backend_token),
+    current_user: dict = Depends(get_current_user_from_token),
     db_client: firestore_async.AsyncClient = Depends(get_db)
 ):
     """
@@ -145,7 +145,7 @@ async def get_study_session_route(
 @router.post("/", response_model=StudySessionResponse, status_code=status.HTTP_201_CREATED)
 async def create_new_study_session_route(
     session_data: StudySessionCreate,
-    current_user: dict = Depends(get_current_user_from_backend_token),
+    current_user: dict = Depends(get_current_user_from_token),
     db_client: firestore_async.AsyncClient = Depends(get_db)
 ):
     """
@@ -184,7 +184,7 @@ async def create_new_study_session_route(
 async def update_existing_study_session_route(
     session_id: str,
     update_data: StudySessionUpdate,
-    current_user: dict = Depends(get_current_user_from_backend_token),
+    current_user: dict = Depends(get_current_user_from_token),
     db_client: firestore_async.AsyncClient = Depends(get_db)
 ):
     """
@@ -232,7 +232,7 @@ async def update_existing_study_session_route(
 @router.delete("/{session_id}")
 async def delete_existing_study_session_route(
     session_id: str,
-    current_user: dict = Depends(get_current_user_from_backend_token),
+    current_user: dict = Depends(get_current_user_from_token),
     db_client: firestore_async.AsyncClient = Depends(get_db)
 ):
     """
