@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 import psutil
 from datetime import datetime
@@ -12,35 +13,79 @@ import platform
 
 # 라우터 모듈 임포트
 from route import timetable, study_session, subject
-from route.auth import google
-
-app = FastAPI(title="Gradia Backend", description="Gradia Backend API")
-
-# CORS 미들웨어 추가
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 실제 환경에서는 허용할 도메인만 지정하세요
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+from route.auth import google as auth_google_router_module, common as auth_common_router_module
+from db import (
+    initialize_firebase_app_if_not_yet as db_initialize_firebase_app,
+    get_firestore_client as db_get_firestore_client,
+    delete_firebase_app_if_exists as db_delete_firebase_app
 )
 
-# 라우터 등록
-app.include_router(timetable.router)
-app.include_router(google.router)
-app.include_router(study_session.router)
-app.include_router(subject.router)
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # 애플리케이션 시작 시 실행될 코드
+    print("FastAPI lifespan: Startup phase beginning...")
+    try:
+        db_initialize_firebase_app()
+        app.state.firestore_client = db_get_firestore_client()
+        if app.state.firestore_client:
+            print(
+                "Firestore client successfully obtained and set on app.state.firestore_client during lifespan startup.")
+        else:
+            print(
+                "Critical Error: Firestore client could not be obtained during lifespan startup.")
+    except Exception as e:
+        print(
+            f"Critical Error during FastAPI lifespan startup: Failed to initialize Firebase/Firestore: {e}")
+        import traceback
+        traceback.print_exc()
+
+    yield  # 애플리케이션 실행 구간
+
+    # 애플리케이션 종료 시 실행될 코드
+    print("FastAPI lifespan: Shutdown phase beginning...")
+    db_delete_firebase_app()
+    if hasattr(app.state, "firestore_client"):
+        delattr(app.state, "firestore_client")
+        print("Firestore client removed from app.state during lifespan shutdown.")
+    print("FastAPI lifespan: Shutdown phase complete.")
+
+
+def create_app():
+    app = FastAPI(title="Gradia Backend", version="0.1.0", lifespan=lifespan)
+
+    # CORS 미들웨어 추가
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # 실제 환경에서는 허용할 도메인만 지정하세요
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # 라우터 등록
+    app.include_router(timetable.router)
+    app.include_router(auth_google_router_module.router)
+    app.include_router(auth_common_router_module.common_router)
+    app.include_router(study_session.router)
+    app.include_router(subject.router)
+
+    @app.get("/")
+    async def root():
+        return {"message": "Welcome to Gradia Backend"}
+
+    return app
+
+
+app = create_app()
+
 
 @app.get("/system/memory", tags=["System"])
 async def get_memory_info():
     """현재 시스템과 애플리케이션의 메모리 사용량 정보를 반환합니다."""
     process = psutil.Process()
     process_memory = process.memory_info()
-    
+
     return {
         "timestamp": datetime.now().isoformat(),
         "application": {

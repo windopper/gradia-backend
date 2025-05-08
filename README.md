@@ -99,13 +99,186 @@ GET /timetable?url={에브리타임_URL}
 }
 ```
 
+### 인증 (Authentication)
+
+#### Google 계정으로 로그인
+
+```
+POST /auth/google
+```
+
+- Google ID 토큰을 사용하여 사용자를 인증하고, Gradia 서비스의 액세스 토큰을 발급합니다.
+- **요청 본문**:
+  ```json
+  {
+    "id_token_str": "YOUR_GOOGLE_ID_TOKEN"
+  }
+  ```
+- **성공 응답 예시**:
+  ```json
+  {
+    "access_token": "string (Gradia Access Token)",
+    "token_type": "bearer",
+    "user_id": "string",
+    "email": "user@example.com",
+    "name": "User Name"
+  }
+  ```
+
+#### 현재 사용자 정보 조회
+
+```
+GET /auth/users/me
+```
+
+- 현재 Gradia 서비스에 로그인된 사용자의 정보를 반환합니다.
+- `Authorization` 헤더에 `Bearer <Gradia_Access_Token>` 형태로 토큰이 필요합니다.
+- **성공 응답 예시**:
+  ```json
+  {
+    "user_id": "string",
+    "email": "user@example.com",
+    "name": "User Name",
+    "google_id": "string (Google User ID)",
+    "created_at": "YYYY-MM-DDTHH:MM:SS.ffffffZ",
+    "updated_at": "YYYY-MM-DDTHH:MM:SS.ffffffZ",
+    "picture": "URL_to_profile_picture_or_null"
+  }
+  ```
+
+### 학습 세션 (Study Sessions)
+
+모든 학습 세션 관련 API는 `Authorization` 헤더에 `Bearer <access_token>` 형태의 토큰이 필요합니다.
+
+#### 학습 세션 목록 조회
+
+```
+GET /study-sessions/
+```
+
+- 현재 인증된 사용자의 모든 학습 세션을 조회합니다.
+- 선택적으로 `subject_id` 쿼리 파라미터를 사용하여 특정 과목의 학습 세션만 필터링할 수 있습니다.
+
+#### 특정 학습 세션 조회
+
+```
+GET /study-sessions/{session_id}
+```
+
+- `{session_id}`에 해당하는 특정 학습 세션의 상세 정보를 조회합니다.
+
+#### 새 학습 세션 생성
+
+```
+POST /study-sessions/
+```
+
+- 새로운 학습 세션을 생성합니다.
+- 요청 바디 예시:
+  ```json
+  {
+    "subject_id": "string",
+    "date": "YYYY-MM-DD",
+    "study_time": 0, // 분 단위
+    "start_time": "YYYY-MM-DDTHH:MM:SSZ",
+    "end_time": "YYYY-MM-DDTHH:MM:SSZ",
+    "rest_time": 0 // 분 단위 (선택 사항)
+  }
+  ```
+
+#### 학습 세션 업데이트
+
+```
+PATCH /study-sessions/{session_id}
+```
+
+- `{session_id}`에 해당하는 기존 학습 세션의 정보를 업데이트합니다.
+- 업데이트할 필드만 요청 바디에 포함합니다.
+
+#### 학습 세션 삭제
+
+```
+DELETE /study-sessions/{session_id}
+```
+
+- `{session_id}`에 해당하는 학습 세션을 삭제합니다.
+
+### 과목 (Subjects)
+
+모든 과목 관련 API는 `Authorization` 헤더에 `Bearer <access_token>` 형태의 토큰이 필요합니다.
+
+#### 과목 목록 조회
+
+```
+GET /subjects/
+```
+
+- 현재 인증된 사용자의 모든 과목을 조회합니다.
+
+#### 특정 과목 조회
+
+```
+GET /subjects/{subject_id}
+```
+
+- `{subject_id}`에 해당하는 특정 과목의 상세 정보를 조회합니다.
+
+#### 새 과목 생성
+
+```
+POST /subjects/
+```
+
+- 새로운 과목을 생성합니다.
+- 요청 바디 예시:
+  ```json
+  {
+    "name": "string",
+    "type": 0, // 0: 전공필수, 1: 전공선택, 2: 교양
+    "credit": 0,
+    "difficulty": 0, // 선택 사항
+    "mid_term_schedule": "YYYY-MM-DDTHH:MM", // 선택 사항
+    "final_term_schedule": "YYYY-MM-DDTHH:MM", // 선택 사항
+    "evaluation_ratio": { // 선택 사항
+      "mid_term_ratio": 0,
+      "final_term_ratio": 0,
+      "quiz_ratio": 0,
+      "assignment_ratio": 0,
+      "attendance_ratio": 0
+    },
+    "target_study_time": { // 선택 사항
+      "daily_target_study_time": 0, // 분 단위
+      "weekly_target_study_time": 0, // 분 단위
+      "monthly_target_study_time": 0 // 분 단위
+    },
+    "color": "#FFFFFF" // 선택 사항, HEX 코드
+  }
+  ```
+
+#### 과목 정보 업데이트
+
+```
+PATCH /subjects/{subject_id}
+```
+
+- `{subject_id}`에 해당하는 기존 과목의 정보를 업데이트합니다.
+- 업데이트할 필드만 요청 바디에 포함합니다.
+
+#### 과목 삭제
+
+```
+DELETE /subjects/{subject_id}
+```
+
+- `{subject_id}`에 해당하는 과목을 삭제합니다.
+
 ## 부하 테스트
 
-프로젝트에는 Locust를 사용한 부하 테스트 스크립트가 포함되어 있습니다. 이를 통해 시간표 API의 성능을 테스트할 수 있습니다.
+프로젝트에는 Locust를 사용한 부하 테스트 스크립트가 포함되어 있습니다. 이를 통해 시간표 API, 과목(Subject) API, 학습 세션(Study Session) API의 성능을 테스트할 수 있습니다.
 
 ### 사용 방법
 
-1. `locustfile.py` 파일의 `EVERYTIME_SAMPLE_URLS` 리스트에 테스트에 사용할 에브리타임 URL 샘플들을 추가합니다.
+1. `locustfile.py` 파일의 `EVERYTIME_SAMPLE_URLS` 리스트에 시간표 API 테스트에 사용할 에브리타임 URL 샘플들을 추가합니다. (과목 및 학습 세션 API 테스트는 내부적으로 임시 사용자를 생성하므로 별도 설정이 필요 없습니다.)
 2. 먼저 FastAPI 서버를 실행합니다:
    ```bash
    uvicorn main:app --host 0.0.0.0 --port 8000
@@ -118,7 +291,22 @@ GET /timetable?url={에브리타임_URL}
 
 ### 테스트 기능
 
-- `/timetable` 엔드포인트에 대한 부하 테스트
+- `/timetable` 엔드포인트에 대한 부하 테스트 (현재 `locustfile.py`에서 해당 User는 주석 처리되어 있을 수 있습니다.)
+- 과목(Subject) 및 학습 세션(Study Session) API에 대한 CRUD 부하 테스트:
+    - 테스트 시작 시 임시 사용자 계정을 동적으로 생성하고, 해당 사용자의 인증 토큰을 사용하여 API를 호출합니다.
+    - **과목(Subject) API 테스트 대상**:
+        - 과목 생성 (`POST /subjects/`)
+        - 전체 과목 목록 조회 (`GET /subjects/`)
+        - 특정 과목 상세 조회 (`GET /subjects/{subject_id}`)
+        - 과목 정보 수정 (`PATCH /subjects/{subject_id}`)
+        - 과목 삭제 (`DELETE /subjects/{subject_id}`)
+    - **학습 세션(Study Session) API 테스트 대상**:
+        - 학습 세션 생성 (`POST /study-sessions/`)
+        - 전체 학습 세션 목록 또는 특정 과목의 세션 목록 조회 (`GET /study-sessions/`, `GET /study-sessions/?subject_id={subject_id}`)
+        - 특정 학습 세션 상세 조회 (`GET /study-sessions/{session_id}`)
+        - 학습 세션 정보 수정 (`PATCH /study-sessions/{session_id}`)
+        - 학습 세션 삭제 (`DELETE /study-sessions/{session_id}`)
+    - 테스트 종료 시 생성되었던 모든 과목, 학습 세션 및 임시 사용자 계정을 자동으로 삭제하여 환경을 정리합니다.
 - 1~3초 간격으로 무작위 요청 생성
 - 응답 상태 코드 및 JSON 포맷 검증
 - 테스트 결과 시각화 및 통계 제공
