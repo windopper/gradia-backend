@@ -1,17 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer
-from pydantic import BaseModel  # 요청 본문을 위한 모델 추가
+from pydantic import BaseModel
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from jose import jwt, JWTError, ExpiredSignatureError
-# 공용 모듈 import
 from .common import SECRET_KEY, ALGORITHM, TokenData, create_access_token, get_current_user_from_token, bearer_scheme
-# 새로 추가한 사용자 관리 모듈 import
 from db.user import get_user_by_google_id, get_or_create_user, get_user_by_id
-from dependencies import get_db  # get_db 의존성 함수 import
-from firebase_admin import firestore_async  # db_client 타입 힌트용
+from dependencies import get_db
+from firebase_admin import firestore_async
 
-# 설정값은 외부 파일이나 환경 변수에서 불러오는 것이 좋습니다.
 GOOGLE_CLIENT_ID = "637824960431-fo6ev723vd5u0pmqm4m17r79icm5ugc1.apps.googleusercontent.com"
 
 router = APIRouter(

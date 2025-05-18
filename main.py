@@ -12,7 +12,8 @@ import platform
 #     print("Windows 환경 감지: SelectorEventLoop 정책으로 변경됨")
 
 # 라우터 모듈 임포트
-from route import timetable, study_session, subject
+# 개별 라우터 임포트 대신 route/__init__.py의 통합 라우터 사용
+from route import router as route_router
 from route.auth import google as auth_google_router_module, common as auth_common_router_module
 from db import (
     initialize_firebase_app_if_not_yet as db_initialize_firebase_app,
@@ -64,11 +65,10 @@ def create_app():
     )
 
     # 라우터 등록
-    app.include_router(timetable.router)
+    # 개별 라우터 등록 대신 통합 라우터 사용
+    app.include_router(route_router)
     app.include_router(auth_google_router_module.router)
     app.include_router(auth_common_router_module.common_router)
-    app.include_router(study_session.router)
-    app.include_router(subject.router)
 
     @app.get("/")
     async def root():

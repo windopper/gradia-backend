@@ -31,7 +31,7 @@ class TimeTableApiUser(HttpUser):
         # 샘플 URL 중 하나를 무작위로 선택
         url = random.choice(EVERYTIME_SAMPLE_URLS)
 
-        # URL 인코딩
+        # URL 인코
         encoded_url = urllib.parse.quote(url, safe='')
 
         # 요청 보내기

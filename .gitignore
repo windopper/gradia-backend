@@ -13,3 +13,5 @@ wheels/
 secret/
 entity/
 *.log
+
+.env
