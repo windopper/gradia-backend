@@ -13,7 +13,6 @@ from utils.sync_playwright_everytime import SyncPlaywrightTimetableParser
 
 # 라우터 정의
 router = APIRouter(
-    prefix="/timetable",
     tags=["timetable"],
     responses={404: {"description": "Not found"}},
 )
@@ -23,6 +22,8 @@ MAX_CONCURRENT_JOBS = 10
 processing_semaphore = asyncio.Semaphore(MAX_CONCURRENT_JOBS)
 
 # 응답 모델 정의
+
+
 class TimetableItem(BaseModel):
     day: str
     name: str
@@ -31,33 +32,37 @@ class TimetableItem(BaseModel):
     place: str
     professor: str
 
+
 class TimetableResponse(BaseModel):
     timetable: List[TimetableItem]
     message: str
+
 
 @router.get("/", response_model=TimetableResponse)
 async def get_timetable(url: HttpUrl = Query(..., description="에브리타임 시간표 URL")):
     """
     에브리타임 URL에서 시간표 정보를 파싱하여 반환합니다.
-    
+
     - **url**: 에브리타임 시간표 URL (필수)
     """
     try:
         # 세마포어를 활용하여 동시 처리 작업 수 제한
         async with processing_semaphore:
             # 비동기 컨텍스트에서 스레드풀의 Future를 사용하여 처리
-            
+
             if platform.system() == 'Windows':
-                future = ChromiumTimetableParser.parse_timetable_async(str(url))
+                future = ChromiumTimetableParser.parse_timetable_async(
+                    str(url))
             else:
                 # 호스팅 환경에서 크로미움이 작동하지 않는 관계로
                 # Playwright를 사용
-                future = SyncPlaywrightTimetableParser.parse_timetable_async(str(url))
-            
+                future = SyncPlaywrightTimetableParser.parse_timetable_async(
+                    str(url))
+
             # 이벤트 루프에서 Future 결과를 기다림
             loop = asyncio.get_event_loop()
             timetable_data = await loop.run_in_executor(None, future.result)
-            
+
             return {
                 "timetable": timetable_data,
                 "message": "시간표 파싱 성공"

@@ -24,7 +24,6 @@ from db.subject import (
 
 # 라우터 정의
 router = APIRouter(
-    prefix="/subjects",
     tags=["subjects"],
     responses={404: {"description": "Not found"}},
 )

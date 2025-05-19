@@ -67,8 +67,6 @@ def create_app():
     # 라우터 등록
     # 개별 라우터 등록 대신 통합 라우터 사용
     app.include_router(route_router)
-    app.include_router(auth_google_router_module.router)
-    app.include_router(auth_common_router_module.common_router)
 
     @app.get("/")
     async def root():

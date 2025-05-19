@@ -12,7 +12,6 @@ from firebase_admin import firestore_async
 GOOGLE_CLIENT_ID = "637824960431-fo6ev723vd5u0pmqm4m17r79icm5ugc1.apps.googleusercontent.com"
 
 router = APIRouter(
-    prefix="/auth",
     tags=["auth"],
     responses={404: {"description": "Not found"}},
 )

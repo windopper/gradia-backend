@@ -24,7 +24,6 @@ from db.study_session import (
 
 # 라우터 정의
 router = APIRouter(
-    prefix="/study-sessions",
     tags=["study-sessions"],
     responses={404: {"description": "Not found"}},
 )

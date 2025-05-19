@@ -15,8 +15,7 @@ SECRET_KEY = "your_secret_key"
 ALGORITHM = "HS256"
 
 common_router = APIRouter(
-    prefix="/auth/common",
-    tags=["auth-common"],
+    tags=["auth"],
     responses={404: {"description": "Not found"}},
 )
 
