@@ -56,7 +56,7 @@ async def predict_grade(request: GradePredictionRequest):
             return {"prediction": f"{request.subject_name} 과목의 예상 점수를 계산할 수 없습니다. API 키가 설정되지 않았습니다."}
 
         model = ChatGoogleGenerativeAI(model="gemini-2.5-flash-preview-04-17",
-                                       convert_system_message_to_human=True)
+                                       temperature=0.4)
 
         # Jinja2 템플릿 로드 및 렌더링
         try:
@@ -80,6 +80,8 @@ async def predict_grade(request: GradePredictionRequest):
         structured_prediction = None
         try:
             score_match = re.search(r"<score>(.*?)</score>", prediction_text)
+            score_range_match = re.search(
+                r"<score_range>(.*?)</score_range>", prediction_text)
             grade_match = re.search(r"<grade>(.*?)</grade>", prediction_text)
             factors_matches = re.findall(
                 r"<factor>(.*?)</factor>", prediction_text)
@@ -88,6 +90,7 @@ async def predict_grade(request: GradePredictionRequest):
 
             structured_prediction = {
                 "score": score_match.group(1) if score_match else None,
+                "score_range": score_range_match.group(1) if score_range_match else None,
                 "grade": grade_match.group(1) if grade_match else None,
                 "factors": factors_matches,
                 "advice": advice_matches
