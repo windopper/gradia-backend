@@ -117,6 +117,42 @@ async def create_temp_user_and_get_token_route(
         )
 
 
+@common_router.post("/refresh_token")
+async def refresh_access_token_route(
+    current_user: dict = Depends(get_current_user_from_token),
+    db_client: firestore_async.AsyncClient = Depends(get_db)
+):
+    """
+    현재 유효한 액세스 토큰을 새로운 토큰으로 연장합니다.
+    """
+    try:
+        user_id = current_user["id"]
+
+        # 새로운 액세스 토큰 생성 (2주 만료)
+        new_access_token = create_access_token(data={"sub": user_id})
+
+        return {
+            "message": "Access token refreshed successfully.",
+            "access_token": new_access_token,
+            "token_type": "bearer",
+            "user_id": user_id,
+            "email": current_user.get('email'),
+            "name": current_user.get('name'),
+            "google_id": current_user.get('google_id'),
+            "picture": current_user.get('picture')
+        }
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        print(f"Error in refresh_access_token_route: {type(e).__name__} - {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An internal server error occurred while refreshing the access token.",
+        )
+
+
 @common_router.delete("/temp_user_for_test")
 async def delete_temp_user_route(
     current_user: dict = Depends(get_current_user_from_token),
