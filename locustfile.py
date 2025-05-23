@@ -68,7 +68,7 @@ class SubjectStudySessionUser(HttpUser):
         생성된 subject_id와 session_id를 저장할 리스트를 초기화합니다.
         """
         logging.info("SubjectStudySessionUser 시작: 임시 사용자 생성 중...")
-        response = self.client.post("/auth/common/temp_user_for_test")
+        response = self.client.post("/auth/temp_user_for_test")
         if response.status_code == 200:
             data = response.json()
             self.access_token = data["access_token"]
@@ -109,7 +109,7 @@ class SubjectStudySessionUser(HttpUser):
         if self.session_ids:
             logging.info(f"총 {len(self.session_ids)}개의 학습 세션 삭제 시도...")
             for session_id in reversed(self.session_ids):
-                with self.client.delete(f"/study-sessions/{session_id}", headers=self.headers, name="/study-sessions/{id} (DELETE)", catch_response=True) as response:
+                with self.client.delete(f"/study-session/{session_id}", headers=self.headers, name="/study-sessions/{id} (DELETE)", catch_response=True) as response:
                     if response.status_code == 200:
                         logging.info(f"Study Session {session_id} 삭제 성공")
                     elif response.status_code == 404:
@@ -129,7 +129,7 @@ class SubjectStudySessionUser(HttpUser):
             for subject_id in reversed(self.subject_ids):
                 # 먼저 해당 과목의 모든 세션이 삭제되었는지 확인하거나, API에서 자동 처리하는지 확인 필요.
                 # 여기서는 일단 과목만 삭제 시도.
-                with self.client.delete(f"/subjects/{subject_id}", headers=self.headers, name="/subjects/{id} (DELETE)", catch_response=True) as response:
+                with self.client.delete(f"/subject/{subject_id}", headers=self.headers, name="/subjects/{id} (DELETE)", catch_response=True) as response:
                     if response.status_code == 200:
                         logging.info(f"Subject {subject_id} 삭제 성공")
                     elif response.status_code == 404:
@@ -148,7 +148,7 @@ class SubjectStudySessionUser(HttpUser):
 
         # 임시 사용자 계정 삭제
         logging.info(f"임시 사용자 (User ID: {self.user_id}) 삭제 시도...")
-        with self.client.delete("/auth/common/temp_user_for_test", headers=self.headers, name="/auth/common/temp_user_for_test (DELETE)", catch_response=True) as response:
+        with self.client.delete("/auth/temp_user_for_test", headers=self.headers, name="/auth/common/temp_user_for_test (DELETE)", catch_response=True) as response:
             if response.status_code == 200:
                 logging.info(f"임시 사용자 (User ID: {self.user_id}) 삭제 성공")
             elif response.status_code == 401 or response.status_code == 404:  # 토큰 만료 또는 이미 삭제된 경우
@@ -190,7 +190,7 @@ class SubjectStudySessionUser(HttpUser):
             },
             "color": f"#{random.randint(0, 0xFFFFFF):06x}"
         }
-        with self.client.post("/subjects/", json=subject_data, headers=self.headers, name="/subjects/ (POST)", catch_response=True) as response:
+        with self.client.post("/subject/", json=subject_data, headers=self.headers, name="/subjects/ (POST)", catch_response=True) as response:
             if response.status_code == 201:
                 created_subject = response.json()
                 self.subject_ids.append(created_subject["id"])
@@ -209,7 +209,7 @@ class SubjectStudySessionUser(HttpUser):
                 "Token이 없어 get_all_subjects_task를 건너<0xEB><0x9C><0x84>니다.")
             return
 
-        with self.client.get("/subjects/", headers=self.headers, name="/subjects/ (GET all)", catch_response=True) as response:
+        with self.client.get("/subject/", headers=self.headers, name="/subjects/ (GET all)", catch_response=True) as response:
             if response.status_code == 200:
                 # logging.info(f"모든 Subject 조회 성공: {len(response.json().get('subjects', []))}개")
                 pass  # 성공 로깅은 너무 많을 수 있어 생략
@@ -225,7 +225,7 @@ class SubjectStudySessionUser(HttpUser):
             return
 
         subject_id = random.choice(self.subject_ids)
-        with self.client.get(f"/subjects/{subject_id}", headers=self.headers, name="/subjects/{id} (GET specific)", catch_response=True) as response:
+        with self.client.get(f"/subject/{subject_id}", headers=self.headers, name="/subjects/{id} (GET specific)", catch_response=True) as response:
             if response.status_code == 200:
                 # logging.info(f"Subject {subject_id} 조회 성공")
                 pass
@@ -251,7 +251,7 @@ class SubjectStudySessionUser(HttpUser):
             "difficulty": random.randint(1, 5),
             "color": f"#{random.randint(0, 0xFFFFFF):06x}"
         }
-        with self.client.patch(f"/subjects/{subject_id}", json=update_data, headers=self.headers, name="/subjects/{id} (PATCH)", catch_response=True) as response:
+        with self.client.patch(f"/subject/{subject_id}", json=update_data, headers=self.headers, name="/subjects/{id} (PATCH)", catch_response=True) as response:
             if response.status_code == 200:
                 # logging.info(f"Subject {subject_id} 업데이트 성공")
                 pass
@@ -288,7 +288,7 @@ class SubjectStudySessionUser(HttpUser):
             "end_time": end_time.isoformat(),
             "rest_time": random.randint(0, 600)  # 초 단위 정수
         }
-        with self.client.post("/study-sessions/", json=session_data, headers=self.headers, name="/study-sessions/ (POST)", catch_response=True) as response:
+        with self.client.post("/study-session/", json=session_data, headers=self.headers, name="/study-sessions/ (POST)", catch_response=True) as response:
             if response.status_code == 201:
                 created_session = response.json()
                 self.session_ids.append(created_session["id"])
@@ -309,13 +309,13 @@ class SubjectStudySessionUser(HttpUser):
 
         # 모든 세션 조회 또는 특정 과목 세션 조회 (랜덤 선택)
         name_suffix = "(GET all)"
-        url = "/study-sessions/"
+        url = "/study-session/"
         if self.subject_ids and random.choice([True, False]):
             subject_id_for_filter = random.choice(self.subject_ids)
-            url = f"/study-sessions/?subject_id={subject_id_for_filter}"
+            url = f"/study-session/?subject_id={subject_id_for_filter}"
             name_suffix = f"(GET by subject_id {subject_id_for_filter})"
 
-        with self.client.get(url, headers=self.headers, name=f"/study-sessions/ {name_suffix}", catch_response=True) as response:
+        with self.client.get(url, headers=self.headers, name=f"/study-session/ {name_suffix}", catch_response=True) as response:
             if response.status_code == 200:
                 # logging.info(f"Study Sessions 조회 성공 ({name_suffix}): {len(response.json().get('sessions', []))}개")
                 pass
@@ -331,7 +331,7 @@ class SubjectStudySessionUser(HttpUser):
             return
 
         session_id = random.choice(self.session_ids)
-        with self.client.get(f"/study-sessions/{session_id}", headers=self.headers, name="/study-sessions/{id} (GET specific)", catch_response=True) as response:
+        with self.client.get(f"/study-session/{session_id}", headers=self.headers, name="/study-sessions/{id} (GET specific)", catch_response=True) as response:
             if response.status_code == 200:
                 # logging.info(f"Study Session {session_id} 조회 성공")
                 pass
@@ -355,7 +355,7 @@ class SubjectStudySessionUser(HttpUser):
             "study_time": random.randint(600, 3600),  # 10분 ~ 1시간 사이 값으로 업데이트
             "rest_time": random.randint(0, 300)
         }
-        with self.client.patch(f"/study-sessions/{session_id}", json=update_data, headers=self.headers, name="/study-sessions/{id} (PATCH)", catch_response=True) as response:
+        with self.client.patch(f"/study-session/{session_id}", json=update_data, headers=self.headers, name="/study-sessions/{id} (PATCH)", catch_response=True) as response:
             if response.status_code == 200:
                 # logging.info(f"Study Session {session_id} 업데이트 성공")
                 pass
@@ -379,7 +379,7 @@ class SubjectStudySessionUser(HttpUser):
         # 주의: 해당 과목에 연결된 학습 세션이 있다면 삭제가 실패할 수 있습니다 (API 정책에 따라 다름).
         # API가 하위 리소스 자동 삭제를 지원하지 않는다면, 관련 세션을 먼저 삭제하는 로직이 필요할 수 있으나,
         # 여기서는 단순 삭제 시도만 합니다.
-        with self.client.delete(f"/subjects/{subject_id_to_delete}", headers=self.headers, name="/subjects/{id} (DELETE random)", catch_response=True) as response:
+        with self.client.delete(f"/subject/{subject_id_to_delete}", headers=self.headers, name="/subjects/{id} (DELETE random)", catch_response=True) as response:
             if response.status_code == 200:
                 logging.info(f"Random Subject {subject_id_to_delete} 삭제 성공")
                 self.subject_ids.remove(subject_id_to_delete)
@@ -406,7 +406,7 @@ class SubjectStudySessionUser(HttpUser):
             return
 
         session_id_to_delete = random.choice(self.session_ids)
-        with self.client.delete(f"/study-sessions/{session_id_to_delete}", headers=self.headers, name="/study-sessions/{id} (DELETE random)", catch_response=True) as response:
+        with self.client.delete(f"/study-session/{session_id_to_delete}", headers=self.headers, name="/study-sessions/{id} (DELETE random)", catch_response=True) as response:
             if response.status_code == 200:
                 logging.info(
                     f"Random Study Session {session_id_to_delete} 삭제 성공")

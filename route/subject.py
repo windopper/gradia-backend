@@ -233,15 +233,6 @@ async def update_existing_subject_route(
         # 업데이트할 데이터 준비
         update_dict_payload = update_data.dict(exclude_unset=True)
 
-        # 중첩된 객체 처리
-        if 'evaluation_ratio' in update_dict_payload and update_dict_payload['evaluation_ratio']:
-            update_dict_payload['evaluation_ratio'] = update_dict_payload['evaluation_ratio'].dict(
-            )
-
-        if 'target_study_time' in update_dict_payload and update_dict_payload['target_study_time']:
-            update_dict_payload['target_study_time'] = update_dict_payload['target_study_time'].dict(
-            )
-
         # 업데이트 수행
         updated_subject = await update_subject(subject_id, update_dict_payload, db_client=db_client)
 
