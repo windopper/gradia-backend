@@ -163,3 +163,111 @@ async def get_or_create_user(google_id: str, email: str, name: str,
     else:
         # 새 사용자 생성
         return await create_user(google_id, email, name, db_client=db_client, picture=picture)
+
+
+async def get_user_by_kakao_id(kakao_id: str, db_client: firestore_async.AsyncClient) -> Optional[Dict[str, Any]]:
+    """
+    Kakao ID를 사용하여 사용자 정보를 조회합니다.
+
+    Args:
+        kakao_id: Kakao 인증으로 얻은 사용자 고유 ID
+        db_client: Firestore 클라이언트
+
+    Returns:
+        사용자 정보 딕셔너리 또는 사용자가 없는 경우 None
+    """
+    query = db_client.collection(USER_COLLECTION).where(
+        'kakao_id', '==', kakao_id)
+    results = await query.get()
+
+    if len(results) > 0:
+        user_doc = results[0]
+        user_data = user_doc.to_dict()
+        user_data['id'] = user_doc.id  # Firestore 문서 ID 추가
+        return user_data
+
+    return None
+
+
+async def create_kakao_user(kakao_id: str, email: str, name: str,
+                            db_client: firestore_async.AsyncClient,
+                            picture: Optional[str] = None) -> Dict[str, Any]:
+    """
+    새 카카오 사용자를 생성합니다.
+
+    Args:
+        kakao_id: Kakao 인증으로 얻은 사용자 고유 ID
+        email: 사용자 이메일 주소
+        name: 사용자 이름
+        db_client: Firestore 클라이언트
+        picture: 프로필 사진 URL (선택 사항)
+
+    Returns:
+        생성된 사용자 정보
+    """
+    user_data = {
+        'kakao_id': kakao_id,
+        'email': email,
+        'name': name,
+        'created_at': firestore.SERVER_TIMESTAMP,
+        'updated_at': firestore.SERVER_TIMESTAMP
+    }
+
+    if picture:
+        user_data['picture'] = picture
+
+    # 사용자 추가
+    doc_ref = db_client.collection(USER_COLLECTION).document()
+    await doc_ref.set(user_data)
+
+    # 생성된 문서 반환
+    created_doc = await doc_ref.get()
+    new_user_data = created_doc.to_dict()
+    new_user_data['id'] = created_doc.id
+    return new_user_data
+
+
+async def get_or_create_kakao_user(kakao_id: str, email: str, name: str,
+                                   db_client: firestore_async.AsyncClient,
+                                   picture: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Kakao ID로 사용자를 조회하고, 존재하지 않으면 새로 생성합니다.
+
+    Args:
+        kakao_id: Kakao 인증으로 얻은 사용자 고유 ID
+        email: 사용자 이메일 주소
+        name: 사용자 이름
+        db_client: Firestore 클라이언트
+        picture: 프로필 사진 URL (선택 사항)
+
+    Returns:
+        사용자 정보
+    """
+    # get_user_by_kakao_id 함수 호출 시 db_client 전달
+    user = await get_user_by_kakao_id(kakao_id, db_client=db_client)
+
+    if user:
+        # 선택적으로 기존 정보 업데이트
+        update_needed = False
+        update_data = {}
+
+        if user.get('email') != email:
+            update_data['email'] = email
+            update_needed = True
+
+        if user.get('name') != name:
+            update_data['name'] = name
+            update_needed = True
+
+        if picture and user.get('picture') != picture:
+            update_data['picture'] = picture
+            update_needed = True
+
+        if update_needed:
+            # update_user 함수 호출 시 db_client 전달
+            user = await update_user(user['id'], update_data, db_client=db_client)
+
+        return user
+    else:
+        # 새 사용자 생성
+        return await create_kakao_user(kakao_id, email, name, db_client=db_client, picture=picture)

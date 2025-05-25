@@ -125,6 +125,30 @@ POST /auth/google
   }
   ```
 
+#### Kakao 계정으로 로그인
+
+```
+POST /auth/kakao
+```
+
+- Kakao Access Token을 사용하여 사용자를 인증하고, Gradia 서비스의 액세스 토큰을 발급합니다.
+- **요청 본문**:
+  ```json
+  {
+    "access_token": "YOUR_KAKAO_ACCESS_TOKEN"
+  }
+  ```
+- **성공 응답 예시**:
+  ```json
+  {
+    "access_token": "string (Gradia Access Token)",
+    "token_type": "bearer",
+    "user_id": "string",
+    "email": "user@example.com",
+    "name": "User Name"
+  }
+  ```
+
 #### 현재 사용자 정보 조회
 
 ```
