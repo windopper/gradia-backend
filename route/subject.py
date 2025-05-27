@@ -21,6 +21,7 @@ from db.subject import (
     update_subject,
     delete_subject
 )
+from db.study_session import delete_study_sessions_by_subject_id
 
 # 라우터 정의
 router = APIRouter(
@@ -277,11 +278,18 @@ async def delete_existing_subject_route(
                 detail="다른 사용자의 과목을 삭제할 권한이 없습니다."
             )
 
-        # 삭제 수행
+        # 먼저 관련된 학습 세션들을 삭제
+        deleted_sessions_count = await delete_study_sessions_by_subject_id(
+            current_user["id"], subject_id, db_client=db_client
+        )
+
+        # 과목 삭제 수행
         success = await delete_subject(subject_id, db_client=db_client)
 
         if success:
-            return {"message": "과목이 성공적으로 삭제되었습니다."}
+            return {
+                "message": f"과목이 성공적으로 삭제되었습니다. (관련 학습 세션 {deleted_sessions_count}개도 함께 삭제됨)"
+            }
         else:
             raise HTTPException(
                 status_code=500,

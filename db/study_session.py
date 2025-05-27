@@ -166,3 +166,30 @@ async def get_study_sessions_by_subject_id(user_id: str, subject_id: str, db_cli
         sessions.append(session_data)
 
     return sessions
+
+
+async def delete_study_sessions_by_subject_id(user_id: str, subject_id: str, db_client: firestore_async.AsyncClient) -> int:
+    """
+    특정 과목 ID에 해당하는 모든 학습 세션을 삭제합니다.
+
+    Args:
+        user_id: 사용자 고유 ID
+        subject_id: 과목 ID
+        db_client: Firestore 클라이언트
+
+    Returns:
+        삭제된 학습 세션 개수
+    """
+    # 먼저 해당 과목의 모든 학습 세션을 조회
+    query = db_client.collection(STUDY_SESSION_COLLECTION).where(
+        'user_id', '==', user_id).where('subject_id', '==', subject_id)
+    results = await query.get()
+
+    deleted_count = 0
+
+    # 각 학습 세션을 삭제
+    for doc in results:
+        await doc.reference.delete()
+        deleted_count += 1
+
+    return deleted_count
