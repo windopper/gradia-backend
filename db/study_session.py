@@ -59,7 +59,9 @@ async def get_study_session_by_id(session_id: str, db_client: firestore_async.As
 async def create_study_session(user_id: str, subject_id: str, date: str, study_time: int,
                                start_time: datetime, end_time: datetime,
                                db_client: firestore_async.AsyncClient,
-                               rest_time: int = 0) -> Dict[str, Any]:
+                               focus_level: int = 0,
+                               rest_time: int = 0,
+                               memo: str = "") -> Dict[str, Any]:
     """
     새 학습 세션을 생성합니다.
 
@@ -84,6 +86,8 @@ async def create_study_session(user_id: str, subject_id: str, date: str, study_t
         'start_time': start_time,
         'end_time': end_time,
         'rest_time': rest_time,
+        'focus_level': focus_level,
+        'memo': memo,
         'created_at': firestore.SERVER_TIMESTAMP,
         'updated_at': firestore.SERVER_TIMESTAMP
     }

@@ -37,7 +37,9 @@ class StudySessionCreate(BaseModel):
     study_time: int
     start_time: datetime
     end_time: datetime
+    focus_level: int = -1
     rest_time: int = 0
+    memo: str = ""
 
 
 class StudySessionUpdate(BaseModel):
@@ -47,6 +49,8 @@ class StudySessionUpdate(BaseModel):
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     rest_time: Optional[int] = None
+    focus_level: Optional[int] = None
+    memo: Optional[str] = None
 
 
 class StudySessionResponse(BaseModel):
@@ -58,6 +62,8 @@ class StudySessionResponse(BaseModel):
     start_time: datetime
     end_time: datetime
     rest_time: int
+    focus_level: int
+    memo: str
     created_at: datetime
     updated_at: datetime
 
@@ -164,7 +170,9 @@ async def create_new_study_session_route(
             start_time=session_data.start_time,
             end_time=session_data.end_time,
             db_client=db_client,
-            rest_time=session_data.rest_time
+            focus_level=session_data.focus_level,
+            rest_time=session_data.rest_time,
+            memo=session_data.memo
         )
 
         return new_session
