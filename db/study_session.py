@@ -56,6 +56,30 @@ async def get_study_session_by_id(session_id: str, db_client: firestore_async.As
     return None
 
 
+async def get_study_sessions_by_subject_id(subject_id: str, db_client: firestore_async.AsyncClient) -> List[Dict[str, Any]]:
+    """
+    과목 ID로 해당 과목의 모든 학습 세션을 조회합니다.
+
+    Args:
+        subject_id: 과목 ID
+        db_client: Firestore 클라이언트
+
+    Returns:
+        학습 세션 목록
+    """
+    query = db_client.collection(STUDY_SESSION_COLLECTION).where(
+        'subject_id', '==', subject_id)
+    results = await query.get()
+
+    sessions = []
+    for doc in results:
+        session_data = doc.to_dict()
+        session_data['id'] = doc.id
+        sessions.append(session_data)
+
+    return sessions
+
+
 async def create_study_session(user_id: str, subject_id: str, date: str, study_time: int,
                                start_time: datetime, end_time: datetime,
                                db_client: firestore_async.AsyncClient,
@@ -147,7 +171,7 @@ async def delete_study_session(session_id: str, db_client: firestore_async.Async
     return True
 
 
-async def get_study_sessions_by_subject_id(user_id: str, subject_id: str, db_client: firestore_async.AsyncClient) -> List[Dict[str, Any]]:
+async def get_study_sessions_by_subject_id(subject_id: str, db_client: firestore_async.AsyncClient) -> List[Dict[str, Any]]:
     """
     특정 과목 ID에 해당하는 모든 학습 세션을 조회합니다.
 
@@ -160,7 +184,8 @@ async def get_study_sessions_by_subject_id(user_id: str, subject_id: str, db_cli
         학습 세션 목록
     """
     query = db_client.collection(STUDY_SESSION_COLLECTION).where(
-        'user_id', '==', user_id).where('subject_id', '==', subject_id)
+        filter=firestore.FieldFilter('subject_id', '==', subject_id))
+
     results = await query.get()
 
     sessions = []
