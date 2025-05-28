@@ -6,6 +6,12 @@ Gradia 백엔드
 
 - 에브리타임 URL에서 시간표 정보 파싱 (Selenium 및 Playwright 지원)
 - RESTful API로 시간표 데이터 제공
+- 사용자 인증 및 관리 (Google, Kakao 로그인 지원)
+- 과목 관리 (생성, 조회, 수정, 삭제)
+- 학습 세션 관리 (집중도 및 메모 기능 포함)
+- AI 기반 성적 예측 서비스
+  - 기본 성적 예측: 과목명, 이해 수준, 학습 시간 기반
+  - 향상된 성적 예측 (v2): 학습 패턴 분석 및 개인화된 조언 제공
 - Docker 지원으로 간편한 배포 환경 구성
 
 ## 기술 스택
@@ -15,6 +21,10 @@ Gradia 백엔드
 - Selenium
 - Playwright
 - BeautifulSoup4
+- Firebase Firestore (데이터베이스)
+- Google Generative AI (Gemini) - 성적 예측
+- Jinja2 (템플릿 엔진)
+- Langchain (AI 체인 구성)
 - Docker
 
 ## 설치 방법
@@ -206,7 +216,9 @@ POST /study-sessions/
     "study_time": 0, // 분 단위
     "start_time": "YYYY-MM-DDTHH:MM:SSZ",
     "end_time": "YYYY-MM-DDTHH:MM:SSZ",
-    "rest_time": 0 // 분 단위 (선택 사항)
+    "rest_time": 0, // 분 단위 (선택 사항)
+    "focus_level": 3, // 1-5 집중도 (선택 사항)
+    "memo": "오늘 학습한 내용에 대한 메모" // 학습 메모 (선택 사항)
   }
   ```
 
@@ -298,6 +310,8 @@ DELETE /subjects/{subject_id}
 
 ### 성적 예측
 
+#### 기본 성적 예측
+
 ```
 POST /grade-prediction/
 ```
@@ -331,6 +345,76 @@ POST /grade-prediction/
     }
   }
   ```
+
+#### 향상된 성적 예측 (v2)
+
+```
+POST /grade-prediction/v2
+```
+
+- 학습 세션 로그 데이터와 학습 패턴 분석을 기반으로 한 더욱 정확하고 개인화된 성적 예측 서비스입니다.
+- 사용자의 실제 학습 데이터(총 학습 시간, 집중도, 학습 일관성 등)를 분석하여 예측 정확도를 향상시킵니다.
+- `Authorization` 헤더에 `Bearer <access_token>` 형태의 토큰이 필요합니다.
+
+- **요청 바디 예시**:
+  ```json
+  {
+    "subject_id": "string", // 등록된 과목 ID
+    "understanding_level": 3 // 1-5 자기 평가 이해 수준
+  }
+  ```
+
+- **성공 응답 예시**:
+  ```json
+  {
+    "raw_prediction": "AI 모델의 원본 예측 결과 (XML 형식)",
+    "learning_pattern_analysis": {
+      "total_sessions": 15,
+      "total_actual_hours": 45.5,
+      "avg_focus_level": 3.8,
+      "recent_week_hours": 8.5,
+      "recent_week_focus": 4.2,
+      "time_distribution": "주로 오후 시간대 학습",
+      "study_days_per_week": 4,
+      "avg_session_length": 180,
+      "consistency_score": 3.5,
+      "focus_trend": "향상"
+    },
+    "structured_prediction": {
+      "score": "87",
+      "score_range": "85~90",
+      "grade": "A-",
+      "confidence": "85%",
+      "analysis": {
+        "learning_volume": "목표 대비 120% 달성으로 충분한 학습량",
+        "learning_quality": "평균 집중도 3.8/5점으로 양호한 수준",
+        "learning_consistency": "주 4일 규칙적 학습으로 일관성 우수"
+      },
+      "key_factors": [
+        "최근 집중도 향상 추세가 긍정적 영향",
+        "규칙적인 학습 패턴이 안정적 성과 예상",
+        "충분한 학습량 확보로 목표 달성 가능"
+      ],
+      "personalized_advice": {
+        "priority_high": "시험 2주 전부터 복습 중심 학습으로 전환",
+        "optimization": "오후 시간대 집중도가 높으니 어려운 내용은 이 시간에",
+        "maintenance": "현재의 규칙적 학습 패턴 유지"
+      },
+      "weekly_plan": {
+        "target_hours": "10시간",
+        "target_sessions": "5회",
+        "focus_areas": "개념 정리 및 문제 풀이 병행"
+      }
+    }
+  }
+  ```
+
+**v2 버전의 주요 특징:**
+- **학습 패턴 분석**: 실제 학습 세션 데이터를 기반으로 한 정확한 분석
+- **개인화된 조언**: 사용자의 학습 습관과 패턴에 맞춘 구체적 조언
+- **예측 신뢰도**: 데이터 충분성을 고려한 예측 신뢰도 제공
+- **주간 학습 계획**: 다음 주 학습 계획 제안
+- **트렌드 분석**: 집중도 변화 추세 및 학습 일관성 분석
 
 ## 부하 테스트
 
