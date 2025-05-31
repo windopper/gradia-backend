@@ -27,6 +27,10 @@ Gradia 백엔드
 - Langchain
 - Docker
 
+## 시스템 아키텍처
+
+![Gradia Backend Architecture](docs/gradia-backend-architecture.png)
+
 ## 설치 방법
 
 ### 요구 사항
@@ -287,7 +291,17 @@ POST /subjects/
       "weekly_target_study_time": 0, // 분 단위
       "monthly_target_study_time": 0 // 분 단위
     },
-    "color": "#FFFFFF" // 선택 사항, HEX 코드
+    "color": "#FFFFFF", // 선택 사항, HEX 코드
+    "todos": [ // 선택 사항, 과목별 할 일 목록
+      {
+        "content": "교재 1장 읽기",
+        "isDone": false
+      },
+      {
+        "content": "과제 1 제출",
+        "isDone": true
+      }
+    ]
   }
   ```
 

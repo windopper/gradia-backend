@@ -6,24 +6,7 @@ Gradia Backend는 학습 관리 및 성적 예측 서비스를 제공하는 REST
 
 ## 전체 시스템 아키텍처
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   GitHub Repo   │───▶│  Cloud Build    │───▶│ Artifact Registry│
-│   (master)      │    │                 │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                                        │
-                                                        ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│ Secret Manager  │───▶│   Cloud Run     │◀───│  Docker Image   │
-│                 │    │                 │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                │
-                                ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Firebase      │◀───│  FastAPI App    │───▶│ Google Gen AI   │
-│   Firestore     │    │                 │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
+![Gradia Backend Architecture](gradia-backend-architecture.png)
 
 ## CI/CD 파이프라인
 
@@ -159,6 +142,12 @@ public class SubjectEntity {
     private EvaluationRatio evaluationRatio;
     private TargetStudyTime targetStudyTime;
     private String color;
+    private List<Todo> todos;   // 과목별 할 일 목록
+}
+
+public class Todo {
+    private String content;     // 할 일 내용
+    private boolean isDone;     // 완료 여부
 }
 ```
 
@@ -230,24 +219,9 @@ public class StudySessionEntity {
 
 ### 인증 및 권한 관리
 
-#### OAuth 2.0 플로우
-```
-Client App ──────▶ Google/Kakao OAuth
-     │                    │
-     ▼                    ▼
-Gradia Backend ◀─── ID Token/Access Token
-     │
-     ▼
-Firebase Auth ──────▶ Gradia Access Token
-     │                    │
-     ▼                    ▼
-Protected APIs ◀─── Bearer Token
-```
-
 #### 비밀 정보 관리
 - **Google Secret Manager**: 프로덕션 환경 비밀 정보
 - **환경 변수**: 런타임 설정 주입
-- **Firebase Service Account**: 서비스 간 인증
 
 ### 데이터 보안
 - **HTTPS**: 모든 통신 암호화
