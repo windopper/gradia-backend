@@ -58,7 +58,8 @@ async def create_subject(user_id: str, name: str, subject_type: int, credit: int
                          final_term_schedule: Optional[str] = None,
                          evaluation_ratio: Optional[Dict[str, int]] = None,
                          target_study_time: Optional[Dict[str, int]] = None,
-                         color: Optional[str] = None) -> Dict[str, Any]:
+                         color: Optional[str] = None,
+                         todos: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """
     새 과목을 생성합니다.
 
@@ -104,6 +105,9 @@ async def create_subject(user_id: str, name: str, subject_type: int, credit: int
 
     if color:
         subject_data['color'] = color
+
+    if todos:
+        subject_data['todos'] = todos
 
     doc_ref = db_client.collection(SUBJECT_COLLECTION).document()
     await doc_ref.set(subject_data)

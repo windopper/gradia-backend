@@ -7,7 +7,6 @@ from fastapi import APIRouter, HTTPException, Depends, Query, Body, status
 from pydantic import BaseModel
 from typing import List, Optional, Dict
 from datetime import datetime
-# import asyncio # 현재 사용되지 않으므로 주석 처리 또는 삭제 가능
 
 from dependencies import get_db  # get_db 의존성 함수 import
 from firebase_admin import firestore_async  # db_client 타입 힌트용 (선택적)
@@ -46,6 +45,11 @@ class TargetStudyTime(BaseModel):
     monthly_target_study_time: int = 0
 
 
+class Todo(BaseModel):
+    content: str
+    isDone: bool
+
+
 class SubjectCreate(BaseModel):
     name: str
     type: int  # 0: 전필, 1: 전선, 2: 교양
@@ -56,6 +60,7 @@ class SubjectCreate(BaseModel):
     evaluation_ratio: Optional[EvaluationRatio] = None
     target_study_time: Optional[TargetStudyTime] = None
     color: Optional[str] = None
+    todos: Optional[List[Todo]] = None
 
 
 class SubjectUpdate(BaseModel):
@@ -68,6 +73,7 @@ class SubjectUpdate(BaseModel):
     evaluation_ratio: Optional[EvaluationRatio] = None
     target_study_time: Optional[TargetStudyTime] = None
     color: Optional[str] = None
+    todos: Optional[List[Todo]] = None
 
 
 class SubjectResponse(BaseModel):
@@ -82,6 +88,7 @@ class SubjectResponse(BaseModel):
     evaluation_ratio: Optional[Dict[str, int]] = None
     target_study_time: Optional[Dict[str, int]] = None
     color: Optional[str] = None
+    todos: Optional[List[Todo]] = None
     created_at: datetime
     updated_at: datetime
 
@@ -185,7 +192,8 @@ async def create_new_subject_route(
             final_term_schedule=subject_data.final_term_schedule,
             evaluation_ratio=evaluation_ratio_dict,
             target_study_time=target_study_time_dict,
-            color=subject_data.color
+            color=subject_data.color,
+            todos=subject_data.todos
         )
 
         return new_subject
