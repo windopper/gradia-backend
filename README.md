@@ -21,10 +21,10 @@ Gradia 백엔드
 - Selenium
 - Playwright
 - BeautifulSoup4
-- Firebase Firestore (데이터베이스)
-- Google Generative AI (Gemini) - 성적 예측
-- Jinja2 (템플릿 엔진)
-- Langchain (AI 체인 구성)
+- Firebase Firestore
+- Google Generative AI
+- Jinja2
+- Langchain
 - Docker
 
 ## 설치 방법
