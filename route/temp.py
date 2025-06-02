@@ -141,8 +141,8 @@ def generate_random_sessions(user_id: str, subject_ids: List[str], count: int = 
             # 같은 날짜의 기존 세션들과 시간 겹침 확인
             all_existing_sessions = sessions + daily_sessions
             if not check_time_overlap(start_time, end_time, all_existing_sessions):
-                # 집중도 (1~5)
-                focus_level = random.randint(1, 5)
+                # 집중도 (0~3)
+                focus_level = random.randint(0, 3)
 
                 # 랜덤 과목 선택
                 subject_id = random.choice(subject_ids)
