@@ -217,7 +217,7 @@ async def predict_grade_v2(request: GradePredictionRequestV2,
             return {"prediction": f"{request.subject_name} 과목의 예상 점수를 계산할 수 없습니다. API 키가 설정되지 않았습니다."}
 
         model = ChatGoogleGenerativeAI(model="gemini-2.5-flash-preview-04-17",
-                                       temperature=0.4)
+                                       temperature=0.2)
 
         subject_data = await get_subject_by_id(request.subject_id, db_client)
         study_sessions = await get_study_sessions_by_subject_id(

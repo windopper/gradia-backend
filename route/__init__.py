@@ -8,7 +8,7 @@ __all__ = ["timetable", "study_session", "subject", "grade_prediction"]
 
 from fastapi import APIRouter
 
-from . import auth, subject, study_session, timetable, grade_prediction
+from . import auth, subject, study_session, timetable, grade_prediction, temp
 
 router = APIRouter()
 
@@ -20,3 +20,4 @@ router.include_router(
     timetable.router, prefix="/timetable", tags=["timetable"])
 router.include_router(grade_prediction.router,
                       prefix="/grade-prediction", tags=["grade_prediction"])
+router.include_router(temp.router, prefix="/temp", tags=["temp"])
